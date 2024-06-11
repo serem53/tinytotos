@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  mtoto_saas_core_dev:
+    build: .
+    ports:
+      - "9000:9000"
+    volumes:
+      - .:/app
+    command: npm run start:dev

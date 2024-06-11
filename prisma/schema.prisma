@@ -1,0 +1,163 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x", "darwin", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+//Models below here
+model Users {
+  id              Int           @id @default(autoincrement()) @map("id")
+  roleID          Roles         @relation(fields: [role_id], references: [id])
+  role_id         Int           @map("role_id")
+  OrganizationID  Organizations @relation(fields: [organization_id], references: [id])
+  organization_id Int           @map("organization_id")
+  user_names      String        @map("employee_names")
+  msisdn          String        @unique @map("msisdn")
+  email           String        @unique @map("email")
+  password        String        @map("password")
+  refresh_token   String?       @map("refresh_token")
+  status          Boolean       @map("status")
+
+  userCreate Users?   @relation("users2users")
+  creator    Users?   @relation("users2users", fields: [created_by], references: [id])
+  created_by Int?     @unique @map("created_by")
+  created_at DateTime @default(now()) @map("created_at")
+
+  userupdate Users?   @relation("users3users")
+  updator    Users?   @relation("users3users", fields: [updated_by], references: [id])
+  updated_by Int?     @unique @map("updated_by")
+  updated_at DateTime @updatedAt @map("updated_at")
+
+  userPermissions     UserPermissions[]
+  organizationCreator Organizations[]   @relation("created_by")
+  organizationUpdator Organizations[]   @relation("updated_by")
+
+  @@map("mt_users")
+}
+
+model Organizations {
+  id             Int       @id @default(autoincrement()) @map("id")
+  org_name       String    @map("org_name")
+  website        String    @map("website")
+  main_email     String    @map("main_email")
+  contact_email  String    @map("contact_email")
+  contact_person String    @map("contact_person")
+  contact_msisdn String    @map("contact_msisdn")
+  countryID      Countries @relation(fields: [country_id], references: [id])
+  country_id     Int       @unique @map("country_id")
+  stateID        States    @relation(fields: [state_id], references: [id])
+  state_id       Int       @unique @map("state_id")
+  subStateID     SubStates @relation(fields: [sub_state_id], references: [id])
+  sub_state_id   Int       @unique @map("sub_state_id")
+  address        String    @unique @map("address")
+  createdBy      Users?     @relation("created_by", fields: [created_by], references: [id])
+  created_by     Int?       @map("created_by")
+  created_at     DateTime? @default(now()) @map("created_at")
+  updatedBy      Users?     @relation("updated_by", fields: [updated_by], references: [id])
+  updated_by     Int?       @map("updated_by")
+  updated_at     DateTime? @updatedAt @map("updated_at")
+
+  users Users[]
+
+  @@map("mt_organizations")
+}
+
+model Roles {
+  id        Int    @id @default(autoincrement()) @map("id")
+  role_name String @unique @map("role_name")
+
+  users     Users[]
+  userRoles UserRoles[]
+
+  @@map("mt_roles")
+}
+
+model Permissions {
+  id              Int    @id @default(autoincrement()) @map("id")
+  permission_name String @unique @map("permission_name")
+
+  userRoles       UserRoles[]
+  userPermissions UserPermissions[]
+
+  @@map("mt_permissions")
+}
+
+model UserRoles {
+  id            Int         @id @default(autoincrement()) @map("id")
+  roleID        Roles       @relation(fields: [role_id], references: [id])
+  role_id       Int         @map("role_id")
+  permissionID  Permissions @relation(fields: [permission_id], references: [id])
+  permission_id Int         @map("permission_id")
+
+  @@map("mt_user_roles")
+}
+
+model UserPermissions {
+  id            Int         @id @default(autoincrement()) @map("id")
+  UserID        Users       @relation(fields: [user_id], references: [id])
+  user_id       Int         @map("user_id")
+  PermissionID  Permissions @relation(fields: [permission_id], references: [id])
+  permission_id Int         @map("permission_id")
+
+  @@map("mt_user_permissions")
+}
+
+model Countries {
+  id                  Int        @id @default(autoincrement()) @map("id")
+  Currency            Currencies @relation(fields: [currency_id], references: [id])
+  currency_id         Int        @map("currency_id")
+  country_2_iso_code  String     @map("country_2_iso_Code")
+  country_3_iso_code  String     @map("country_3_iso_code")
+  msisdn_country_code String     @map("msisdn_country_code")
+  nationality         String     @map("nationality")
+  country             String     @map("country")
+
+  states        States[]
+  organizations Organizations[]
+
+  @@map("mt_countries")
+}
+
+model States {
+  id         Int       @id @default(autoincrement()) @map("id")
+  Country    Countries @relation(fields: [country_id], references: [id])
+  country_id Int       @map("country_id")
+  state_name String    @map("state_name")
+
+  subStates     SubStates[]
+  organizations Organizations[]
+
+  @@map("mt_states")
+}
+
+model SubStates {
+  id             Int    @id @default(autoincrement()) @map("id")
+  State          States @relation(fields: [state_id], references: [id])
+  state_id       Int    @map("state_id")
+  sub_state_name String @map("sub_state_name")
+
+  organizations Organizations[]
+
+  @@map("mt_substates")
+}
+
+model Currencies {
+  id                    Int    @id @default(autoincrement()) @map("id")
+  currency_symbol       String @map("currency_symbol")
+  currency_abbreviation String @map("currency_abbreviation")
+  currency              String @map("currency")
+
+  countries Countries[]
+
+  @@map("mt_currencies")
+}
